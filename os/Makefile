@@ -2,9 +2,9 @@ target := riscv32-os
 mode := debug
 kernel := target/$(target)/$(mode)/os
 bin := target/$(target)/$(mode)/kernel.bin
-usr_path := usr
+usr_path := usr/build/rust
 
-export SFSIMG = $(usr_path)/rcore32.img
+export SFSIMG = $(abspath $(usr_path)/main)
 
 .PHONY: all clean run build asm qemu kernel
 

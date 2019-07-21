@@ -8,3 +8,5 @@ Cargo.lock
 *.rlib
 *.img
 *.o
+os/usr/build
+os/usr/rust/target

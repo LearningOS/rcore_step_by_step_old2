@@ -18,6 +18,10 @@ pub fn tick() {
     CPU.tick();
 }
 
+pub fn exit(code: usize) {
+    CPU.exit(code);
+}
+
 pub fn init() {
     println!("+------ now to initialize process ------+");
     let scheduler = Scheduler::new(1);
@@ -35,6 +39,9 @@ pub fn init() {
     CPU.add_thread(thread3);
     let thread4 = Thread::new_kernel(hello_thread, 4);
     CPU.add_thread(thread4);
+    let data = include_bytes!(env!("SFSIMG"));
+    let user = unsafe { Thread::new_user(data) };
+    CPU.add_thread(user);
     CPU.run();
 }
 
