@@ -3,7 +3,6 @@ use crate::context::Context;
 pub struct KernelStack(usize);
 const STACK_SIZE: usize = 0x8000;
 
-extern crate alloc;
 use alloc::alloc::{alloc, dealloc, Layout};
 impl KernelStack {
     pub fn new() -> KernelStack {
@@ -35,24 +34,25 @@ pub struct Thread {
     pub kstack: KernelStack, // 线程对应的内核栈
 }
 
+use alloc::boxed::Box;
 use riscv::register::satp;
 impl Thread {
-    pub fn new_idle() -> Thread {
+    pub fn new_idle() -> Box<Thread> {
         unsafe {
-            Thread {
+            Box::new(Thread {
                 context: Context::null(),
                 kstack: KernelStack::new(),
-            }
+            })
         }
     }
 
-    pub fn new_kernel(entry: extern "C" fn(usize) -> !, arg: usize) -> Thread {
+    pub fn new_kernel(entry: extern "C" fn(usize) -> !, arg: usize) -> Box<Thread> {
         unsafe {
             let _kstack = KernelStack::new();
-            Thread {
+            Box::new(Thread {
                 context: Context::new_kernel_thread(entry, arg, _kstack.top(), satp::read().bits()),
                 kstack: _kstack,
-            }
+            })
         }
     }
 
@@ -61,4 +61,14 @@ impl Thread {
             self.context.switch(&mut target.context);
         }
     }
+}
+
+use crate::process::{ Tid, ExitCode };
+
+#[derive(Clone)]
+pub enum Status {
+    Ready,
+    Running(Tid),
+    Sleeping,
+    Exited(ExitCode),
 }

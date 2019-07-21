@@ -18,6 +18,8 @@ mod memory;
 mod consts;
 mod process;
 
+extern crate alloc;
+
 use buddy_system_allocator::LockedHeap;
 #[global_allocator]
 static HEAP_ALLOCATOR: LockedHeap = LockedHeap::empty();
