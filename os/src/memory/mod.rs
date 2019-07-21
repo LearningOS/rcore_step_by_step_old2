@@ -1,4 +1,5 @@
 pub mod frame_allocator;
+mod paging;
 
 use riscv::register::sstatus;
 use frame_allocator::{ init as init_frame_allocator, test as test_frame_allocator };
@@ -20,6 +21,7 @@ pub fn init(dtb: usize) {
         panic!("failed to query memory");
     }
     test_frame_allocator();
+    remap_kernel(dtb);
 }
 
 fn init_heap() {
@@ -42,5 +44,44 @@ pub fn do_pgfault(tf: &mut TrapFrame, style: PageFault) {
     match style {
         PageFault::LoadPageFault => panic!("load pagefault"),
         PageFault::StorePageFault => panic!("store pagefault"),
+    }
+}
+
+// in memory/mod.rs
+
+extern "C" {
+    // text
+    fn stext();
+    fn etext();
+    // data
+    fn sdata();
+    fn edata();
+    // read only
+    fn srodata();
+    fn erodata();
+    // bss
+    fn sbss();
+    fn ebss();
+    // kernel
+    fn start();
+    fn end();
+    // boot
+    fn bootstack();
+    fn bootstacktop();
+}
+
+fn remap_kernel(dtb: usize) {
+    println!("remaping");
+    let offset = KERNEL_OFFSET as usize - MEMORY_OFFSET as usize;
+    use crate::memory::paging::{ InactivePageTable, MemoryAttr };
+    let mut pg_table = InactivePageTable::new(offset);
+    pg_table.set(stext as usize, etext as usize, MemoryAttr::new().set_readonly().set_execute());
+    pg_table.set(sdata as usize, edata as usize, MemoryAttr::new().set_WR());
+    pg_table.set(srodata as usize, erodata as usize, MemoryAttr::new().set_readonly());
+    pg_table.set(sbss as usize, ebss as usize, MemoryAttr::new().set_WR());
+    pg_table.set(bootstack as usize, bootstacktop as usize, MemoryAttr::new().set_WR());
+    pg_table.set(dtb, dtb + MAX_DTB_SIZE, MemoryAttr::new().set_WR());
+    unsafe {
+        pg_table.activate();
     }
 }
