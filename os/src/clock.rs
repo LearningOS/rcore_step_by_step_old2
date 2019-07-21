@@ -10,11 +10,11 @@ pub fn init() {
     println!("++++setup timer !++++");
 }
 
-static timebase: u64 = 100000;
+static TIMEBASE: u64 = 100000;
 use bbl::sbi::set_timer;
 
 pub fn clock_set_next_event() {
-    set_timer(get_cycle() + timebase);
+    set_timer(get_cycle() + TIMEBASE);
 }
 
 use riscv::register::{time, timeh};

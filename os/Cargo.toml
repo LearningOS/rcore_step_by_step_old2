@@ -15,3 +15,5 @@ panic = "abort"
 [dependencies]
 bbl = { path = "crate/bbl" }
 riscv = { path = "crate/riscv", features = ["inline-asm"] }
+buddy_system_allocator = "0.1"
+device_tree = { path = "crate/device_tree-rs" }

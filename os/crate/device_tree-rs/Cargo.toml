@@ -1,0 +1,10 @@
+[package]
+name = "device_tree"
+version = "1.0.3"
+authors = ["Marc Brinkmann <git@marcbrinkmann.de>"]
+license = "MIT"
+description = "Reads and parses Linux device tree images"
+repository = "https://github.com/mbr/device_tree-rs"
+documentation = "https://mbr.github.io/device_tree-rs/device_tree/"
+
+[features]
