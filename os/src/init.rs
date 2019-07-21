@@ -9,11 +9,5 @@ pub extern "C" fn rust_main() -> ! {
     interrupt_init();
     clock_init();
     crate::memory::init();
-    test_heap();
     loop {}
-}
-
-fn test_heap() {
-    let x = Box::new(1);
-    println!("alloc success!");
 }

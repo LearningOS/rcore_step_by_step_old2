@@ -16,3 +16,7 @@ panic = "abort"
 bbl = { path = "crate/bbl" }
 riscv = { git = "https://github.com/rcore-os/riscv", rev = "c62af46", features = ["inline-asm"] }
 buddy_system_allocator = "0.1"
+bit_field = "0.9"
+buddy-allocator = { path = "crate/buddy-allocator" }
+lazy_static = { version = "1.3", features = ["spin_no_std"] }
+spin = "0.5"

@@ -1,9 +1,18 @@
+pub mod frame_allocator;
+
+use self::frame_allocator::{init as init_frame_allocator, test as test_frame_allocator};
 use crate::consts::*;
 use crate::HEAP_ALLOCATOR;
 use riscv::register::sstatus;
 
 pub fn init() {
+    unsafe {
+        // Allow user memory access
+        sstatus::set_sum();
+    }
     init_heap();
+    init_frame_allocator();
+    test_frame_allocator();
 }
 
 fn init_heap() {
@@ -14,9 +23,4 @@ fn init_heap() {
             .init(HEAP.as_ptr() as usize, KERNEL_HEAP_SIZE);
     }
     println!("heap init end");
-}
-
-#[alloc_error_handler]
-fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
-    panic!("allocation error: {:?}", layout)
 }
