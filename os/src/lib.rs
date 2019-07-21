@@ -7,6 +7,7 @@
 #[macro_use]
 pub mod io;
 
+mod clock;
 mod context;
 mod init;
 mod interrupt;
