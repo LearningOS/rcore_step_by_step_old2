@@ -1,5 +1,6 @@
 use crate::clock::{clock_set_next_event, TICK};
 use crate::context::TrapFrame;
+use crate::process::tick;
 use riscv::register::{mcause::*, sscratch, sstatus, stvec};
 
 #[no_mangle]
@@ -42,9 +43,36 @@ fn timer() {
             println!("100 ticks!");
         }
     }
+    tick();
 }
 
 fn page_fault(tf: &mut TrapFrame) {
     println!("{:?} @ {:#x}", tf.scause.cause(), tf.stval);
     panic!("page fault");
+}
+
+#[inline(always)]
+pub fn enable_and_wfi() {
+    // 使能中断并等待中断
+    unsafe {
+        asm!("csrsi sstatus, 1 << 1; wfi" :::: "volatile");
+    }
+}
+
+#[inline(always)]
+pub fn disable_and_store() -> usize {
+    // 禁用中断并返回当前中断状态
+    let sstatus: usize;
+    unsafe {
+        asm!("csrci sstatus, 1 << 1" : "=r"(sstatus) ::: "volatile");
+    }
+    sstatus & (1 << 1)
+}
+
+#[inline(always)]
+pub fn restore(flags: usize) {
+    // 根据 flag 设置中断
+    unsafe {
+        asm!("csrs sstatus, $0" :: "r"(flags) :: "volatile");
+    }
 }
