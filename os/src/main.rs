@@ -6,6 +6,7 @@ use core::panic::PanicInfo;
 
 #[macro_use]
 pub mod io;
+mod context;
 mod interrupt;
 
 global_asm!(include_str!("boot/entry.asm"));
