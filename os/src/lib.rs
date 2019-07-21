@@ -17,6 +17,7 @@ mod clock;
 mod memory;
 mod consts;
 mod process;
+mod memory_set;
 
 extern crate alloc;
 
