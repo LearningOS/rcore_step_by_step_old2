@@ -30,9 +30,30 @@ pub extern "C" fn rust_trap(tf: &mut TrapFrame) {
     match tf.scause.cause() {
         Trap::Exception(Exception::Breakpoint) => breakpoint(),
         Trap::Interrupt(Interrupt::SupervisorTimer) => super_timer(),
+        Trap::Exception(Exception::UserEnvCall) => syscall(tf),
         _ => panic!("unexpected trap"),
     }
 }
+
+pub const SYS_WRITE: usize = 64;
+pub const SYS_EXIT: usize = 93;
+
+fn syscall(tf: &mut TrapFrame) {
+    tf.sepc += 4;
+    match tf.x[17] {
+        SYS_WRITE => {
+            print!("{}", tf.x[10] as u8 as char);
+        },
+        SYS_EXIT => {
+            println!("exit!");
+            use crate::process::exit;
+            exit(tf.x[10]);
+        },
+        _ => {
+            println!("unknown user syscall !");
+        }
+    };
+} 
 
 fn breakpoint() {
     panic!("a breakpoint set by kernel");

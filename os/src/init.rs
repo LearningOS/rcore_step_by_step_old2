@@ -14,4 +14,17 @@ pub extern "C" fn rust_main(hartid: usize, dtb: usize) -> ! {
     clock_init();
     process_init();
     loop {}
-}	
+}
+
+global_asm!(concat!(
+    r#"
+	.section .data
+	.global _user_img_start
+	.global _user_img_end
+_user_img_start:
+    .incbin ""#,
+    env!("SFSIMG"),
+    r#""
+_user_img_end:
+"#
+)); 

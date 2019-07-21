@@ -22,3 +22,4 @@ buddy-allocator = { path = "crate/buddy-allocator" }
 lazy_static = { version = "1.3", features = ["spin_no_std"] }
 spin = "0.3"
 RoundRobinScheduler = { path  = "crate/RoundRobinScheduler" }
+xmas-elf = "0.6"

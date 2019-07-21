@@ -30,6 +30,15 @@ impl Context {
         ContextContent::new_kernel_thread(entry, arg, kstack_top, satp).push_at(kstack_top)
     }
 
+    pub unsafe fn new_user_thread(
+        entry: usize,
+        ustack_top : usize,
+        kstack_top : usize,
+        satp : usize
+    ) -> Self {
+        ContextContent::new_user_thread(entry, ustack_top, satp).push_at(kstack_top)
+    }
+
     #[naked]
     #[inline(never)]
     pub unsafe extern "C" fn switch(&mut self, target: &mut Context) {
@@ -42,6 +51,11 @@ struct ContextContent {
     ra: usize, // 返回地址
     satp: usize, //　二级页表所在位置
     s: [usize; 12], // 被调用者保存的寄存器
+    tf: TrapFrame,
+}
+
+extern "C" {
+    fn __trapret();
 }
 
 use core::mem::zeroed;
@@ -56,6 +70,24 @@ impl ContextContent {
         _sstatus.set_spp(sstatus::SPP::Supervisor); // 代表 sret 之后的特权级仍为 Ｓ
         content.s[1] = _sstatus.bits();
         content
+    }
+
+    fn new_user_thread(entry : usize, ustack_top : usize, satp : usize) -> Self {
+        ContextContent{
+            ra: __trapret as usize,
+            satp,
+            s: [0;12],
+            tf: {
+                let mut tf: TrapFrame = unsafe { zeroed() };
+                tf.x[2] = ustack_top;   // 栈顶 sp
+                tf.sepc = entry;   // sepc 在调用 sret 之后将被被赋值给 PC
+                tf.sstatus = sstatus::read();
+                tf.sstatus.set_spie(true);
+                tf.sstatus.set_sie(false);
+                tf.sstatus.set_spp(sstatus::SPP::User);   // 代表 sret 之后的特权级为U
+                tf
+            },
+        }
     }
 
     unsafe fn push_at(self, stack_top: usize) -> Context {
