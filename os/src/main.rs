@@ -3,7 +3,7 @@
 #![feature(global_asm)]
 
 use core::panic::PanicInfo;
-use bbl::sbi;
+pub mod io;
 
 global_asm!(include_str!("boot/entry.asm"));
 
@@ -16,9 +16,7 @@ static HELLO: &[u8] = b"Hello World!";
 
 #[no_mangle]
 pub extern "C" fn rust_main() -> ! {
-    for &c in HELLO {
-        sbi::console_putchar(c as usize);
-    }
+    io::puts("666666");
     loop {}
 }
 
