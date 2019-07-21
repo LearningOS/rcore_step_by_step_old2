@@ -8,6 +8,8 @@ use alloc::boxed::Box;
 use processor::Processor;
 use thread_pool::ThreadPool;
 use self::scheduler::Scheduler;
+use crate::fs::ROOT_INODE;
+use crate::fs::INodeExt;
 
 pub type Tid = usize;
 pub type ExitCode = usize;
@@ -22,9 +24,8 @@ pub fn exit(code: usize) {
     CPU.exit(code);
 }
 
-extern "C" {
-    fn _user_img_start();
-    fn _user_img_end();
+pub fn kmain() {
+    CPU.run();
 }
 
 pub fn init() {
@@ -33,26 +34,14 @@ pub fn init() {
     let thread_pool = ThreadPool::new(100, scheduler);
     println!("+------ now to initialize processor ------+");
     CPU.init(Thread::new_idle(), Box::new(thread_pool));
-    println!("+------ now to initialize threads ------+");
-    let thread0 = Thread::new_kernel(hello_thread, 0);
-    CPU.add_thread(thread0);
-    let thread1 = Thread::new_kernel(hello_thread, 1);
-    CPU.add_thread(thread1);
-    let thread2 = Thread::new_kernel(hello_thread, 2);
-    CPU.add_thread(thread2);
-    let thread3 = Thread::new_kernel(hello_thread, 3);
-    CPU.add_thread(thread3);
-    let thread4 = Thread::new_kernel(hello_thread, 4);
-    CPU.add_thread(thread4);
-    let data = unsafe{
-        ::core::slice::from_raw_parts(
-            _user_img_start as *const u8,
-            _user_img_end as usize - _user_img_start as usize,
-        )
-    };
-    let user = unsafe{ Thread::new_user(data) };
+    let data = ROOT_INODE
+        .lookup("rust/shell")
+        .unwrap()
+        .read_as_vec()
+        .unwrap();
+    println!("size of program {:#x}", data.len());
+    let user = unsafe{ Thread::new_user(data.as_slice()) };
     CPU.add_thread(user);
-    CPU.run();
 }
 
 #[no_mangle]
