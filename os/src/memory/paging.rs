@@ -1,103 +1,213 @@
-pub struct MemoryAttr(u32);
+use crate::consts::PHYSICAL_MEMORY_OFFSET;
+use crate::memory::frame_allocator::{alloc_frame, dealloc_frame, phys_to_virt};
+use core::mem::ManuallyDrop;
+pub use riscv::addr::*;
+use riscv::asm::{sfence_vma, sfence_vma_all};
+use riscv::paging::{FrameAllocator, FrameDeallocator};
+use riscv::paging::{Mapper, PageTable, PageTableEntry, PageTableFlags as EF, Rv32PageTable};
+use riscv::register::satp;
 
-impl MemoryAttr {
-    pub fn new() -> MemoryAttr {
-        MemoryAttr(1)
-    }
-
-    pub fn set_readonly(mut self) -> MemoryAttr {
-        self.0 = self.0 | 2; // 1 << 1
-        self
-    }
-
-    pub fn set_execute(mut self) -> MemoryAttr {
-        self.0 = self.0 | 8; // 1 << 3
-        self
-    }
-
-    pub fn set_WR(mut self) -> MemoryAttr {
-        self.0 = self.0 | 2 | 4;
-        self
-    }
+pub struct PageTableImpl {
+    page_table: Rv32PageTable<'static>,
+    root_frame: Frame,
+    entry: Option<PageEntry>,
 }
 
-use crate::memory::frame_allocator::alloc_frame;
-use riscv::addr::Frame;
+/// PageTableEntry: the contents of this entry.
+/// Page: this entry is the pte of page `Page`.
+pub struct PageEntry(&'static mut PageTableEntry, Page);
 
-pub struct InactivePageTable {
-    root_table: Frame,
-    PDEs: [Option<Frame>; 1024],
-    offset: usize,
-}
-
-use riscv::asm::sfence_vma_all;
-
-impl InactivePageTable {
-    pub fn new(_offset: usize) -> InactivePageTable {
-        if let Some(_root_table) = alloc_frame() {
-            return InactivePageTable {
-                root_table: _root_table,
-                PDEs: [None; 1024],
-                offset: _offset,
-            };
-        } else {
-            panic!("oom");
-        }
-    }
-
-    fn pgtable_paddr(&mut self) -> usize {
-        self.root_table.start_address().as_usize()
-    }
-
-    fn pgtable_vaddr(&mut self) -> usize {
-        self.pgtable_paddr() + self.offset
-    }
-
-    pub fn set(&mut self, start: usize, end: usize, attr: MemoryAttr) {
+impl PageEntry {
+    pub fn update(&mut self) {
         unsafe {
-            let mut vaddr = start & !0xfff; // 4K 对齐
-            let pg_table = &mut *(self.pgtable_vaddr() as *mut [u32; 1024]);
-            while vaddr < end {
-                // 1-1. 通过页目录和 VPN[1] 找到所需页目录项
-                let PDX = get_PDX(vaddr);
-                let PDE = pg_table[PDX];
-                // 1-2. 若不存在则创建
-                if PDE == 0 {
-                    self.PDEs[PDX] = alloc_frame();
-                    let PDE_PPN = self.PDEs[PDX].unwrap().start_address().as_usize() >> 12;
-                    pg_table[PDX] = (PDE_PPN << 10) as u32 | 0x1; // pointer to next level of page table
-                }
-                // 2. 页目录项包含了叶结点页表（简称页表）的起始地址，通过页目录项找到页表
-                let pg_table_paddr = (pg_table[PDX] & (!0x3ff)) << 2;
-                // 3. 通过页表和 VPN[0] 找到所需页表项
-                // 4. 设置页表项包含的页面的起始物理地址和相关属性
-                let pg_table_2 =
-                    &mut *((pg_table_paddr as usize + self.offset) as *mut [u32; 1024]);
-                pg_table_2[get_PTX(vaddr)] = ((vaddr - self.offset) >> 2) as u32 | attr.0;
-                vaddr += (1 << 12);
-            }
+            sfence_vma(0, self.1.start_address().as_usize());
         }
     }
 
-    unsafe fn set_root_table(root_table: usize) {
-        // 设置satp
-        asm!("csrw satp, $0" :: "r"(root_table) :: "volatile");
+    pub fn accessed(&self) -> bool {
+        self.0.flags().contains(EF::ACCESSED)
+    }
+    pub fn clear_accessed(&mut self) {
+        self.0.flags_mut().remove(EF::ACCESSED);
     }
 
-    unsafe fn flush_tlb() {
-        sfence_vma_all();
+    pub fn dirty(&self) -> bool {
+        self.0.flags().contains(EF::DIRTY)
+    }
+    pub fn clear_dirty(&mut self) {
+        self.0.flags_mut().remove(EF::DIRTY);
     }
 
-    pub unsafe fn activate(&mut self) {
-        Self::set_root_table((self.pgtable_paddr() >> 12) | (1 << 31));
-        Self::flush_tlb();
+    pub fn writable(&self) -> bool {
+        self.0.flags().contains(EF::WRITABLE)
+    }
+    pub fn set_writable(&mut self, value: bool) {
+        self.0.flags_mut().set(EF::WRITABLE, value);
+    }
+
+    pub fn present(&self) -> bool {
+        self.0.flags().contains(EF::VALID | EF::READABLE)
+    }
+    pub fn set_present(&mut self, value: bool) {
+        self.0.flags_mut().set(EF::VALID | EF::READABLE, value);
+    }
+
+    pub fn target(&self) -> usize {
+        self.0.addr().as_usize()
+    }
+    pub fn set_target(&mut self, target: usize) {
+        let flags = self.0.flags();
+        let frame = Frame::of_addr(PhysAddr::new(target));
+        self.0.set(frame, flags);
+    }
+
+    pub fn user(&self) -> bool {
+        self.0.flags().contains(EF::USER)
+    }
+    pub fn set_user(&mut self, value: bool) {
+        self.0.flags_mut().set(EF::USER, value);
+    }
+
+    pub fn execute(&self) -> bool {
+        self.0.flags().contains(EF::EXECUTABLE)
+    }
+    pub fn set_execute(&mut self, value: bool) {
+        self.0.flags_mut().set(EF::EXECUTABLE, value);
     }
 }
 
-fn get_PDX(addr: usize) -> usize {
-    addr >> 22
+impl PageTableImpl {
+    pub fn map(&mut self, addr: usize, target: usize) -> &mut PageEntry {
+        // map the 4K `page` to the 4K `frame` with `flags`
+        let flags = EF::VALID | EF::READABLE | EF::WRITABLE;
+        let page = Page::of_addr(VirtAddr::new(addr));
+        let frame = Frame::of_addr(PhysAddr::new(target));
+        // we may need frame allocator to alloc frame for new page table(first/second)
+        self.page_table
+            .map_to(page, frame, flags, &mut FrameAllocatorForRiscv)
+            .unwrap()
+            .flush();
+        self.get_entry(addr).expect("fail to get entry")
+    }
+
+    pub fn unmap(&mut self, addr: usize) {
+        let page = Page::of_addr(VirtAddr::new(addr));
+        let (_, flush) = self.page_table.unmap(page).unwrap();
+        flush.flush();
+    }
+
+    pub fn get_entry(&mut self, vaddr: usize) -> Option<&mut PageEntry> {
+        let page = Page::of_addr(VirtAddr::new(vaddr));
+        if let Ok(e) = self.page_table.ref_entry(page.clone()) {
+            let e = unsafe { &mut *(e as *mut PageTableEntry) };
+            self.entry = Some(PageEntry(e, page));
+            Some(self.entry.as_mut().unwrap())
+        } else {
+            None
+        }
+    }
+
+    /// Create a new page table with kernel memory mapped
+    pub fn new() -> Self {
+        let mut pt = Self::new_bare();
+        pt.map_kernel();
+        pt
+    }
+
+    pub fn new_bare() -> Self {
+        let frame = alloc_frame().expect("failed to allocate frame");
+
+        let table =
+            unsafe { &mut *(phys_to_virt(frame.start_address().as_usize()) as *mut PageTable) };
+        table.zero();
+
+        PageTableImpl {
+            page_table: Rv32PageTable::new(table, PHYSICAL_MEMORY_OFFSET),
+            root_frame: frame,
+            entry: None,
+        }
+    }
+
+    pub fn map_kernel(&mut self) {
+        let table = unsafe {
+            &mut *(phys_to_virt(self.root_frame.start_address().as_usize()) as *mut PageTable)
+        };
+        for i in 768..1024 {
+            let flags =
+                EF::VALID | EF::READABLE | EF::WRITABLE | EF::EXECUTABLE | EF::ACCESSED | EF::DIRTY;
+            let frame = Frame::of_addr(PhysAddr::new((i << 22) - PHYSICAL_MEMORY_OFFSET));
+            table[i].set(frame, flags);
+        }
+    }
+
+    pub fn token(&self) -> usize {
+        return self.root_frame.number() | (1 << 31);
+    }
+
+    pub unsafe fn set_token(token: usize) {
+        asm!("csrw satp, $0" :: "r"(token) :: "volatile");
+    }
+
+    pub fn active_token() -> usize {
+        let mut token: usize = 0;
+        unsafe {
+            asm!("csrr $0, satp" : "=r"(token) ::: "volatile");
+        }
+        token
+    }
+
+    pub fn flush_tlb() {
+        unsafe {
+            sfence_vma_all();
+        }
+    }
+
+    /// Activate this page table
+    pub unsafe fn activate(&self) {
+        let old_token = Self::active_token();
+        let new_token = self.token();
+        println!("switch table {:x?} -> {:x?}", old_token, new_token);
+        if old_token != new_token {
+            Self::set_token(new_token);
+            Self::flush_tlb();
+        }
+    }
+
+    /// Execute function `f` with this page table activated
+    pub unsafe fn with<T>(&self, f: impl FnOnce() -> T) -> T {
+        let old_token = Self::active_token();
+        let new_token = self.token();
+        println!("switch table {:x?} -> {:x?}", old_token, new_token);
+        if old_token != new_token {
+            Self::set_token(new_token);
+            Self::flush_tlb();
+        }
+        let ret = f();
+        println!("switch table {:x?} -> {:x?}", new_token, old_token);
+        if old_token != new_token {
+            Self::set_token(old_token);
+            Self::flush_tlb();
+        }
+        ret
+    }
 }
 
-fn get_PTX(addr: usize) -> usize {
-    (addr >> 12) & 0x3ff
+impl Drop for PageTableImpl {
+    fn drop(&mut self) {
+        dealloc_frame(self.root_frame);
+    }
+}
+
+struct FrameAllocatorForRiscv;
+
+impl FrameAllocator for FrameAllocatorForRiscv {
+    fn alloc(&mut self) -> Option<Frame> {
+        alloc_frame()
+    }
+}
+
+impl FrameDeallocator for FrameAllocatorForRiscv {
+    fn dealloc(&mut self, frame: Frame) {
+        dealloc_frame(frame);
+    }
 }

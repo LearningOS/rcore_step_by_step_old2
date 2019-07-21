@@ -55,6 +55,12 @@ pub fn dealloc_frames(target: Frame, size: usize) {
     }
 }
 
+/// Convert physical address to virtual address
+#[inline]
+pub const fn phys_to_virt(paddr: usize) -> usize {
+    PHYSICAL_MEMORY_OFFSET + paddr
+}
+
 pub fn test() {
     let frame1: Frame = alloc_frame().expect("failed to alloc frame");
     println!(

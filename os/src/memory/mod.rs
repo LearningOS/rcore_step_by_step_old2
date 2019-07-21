@@ -1,5 +1,5 @@
 pub mod frame_allocator;
-mod paging;
+pub mod paging;
 
 use self::frame_allocator::{init as init_frame_allocator, test as test_frame_allocator};
 use crate::consts::*;
@@ -14,7 +14,6 @@ pub fn init() {
     init_heap();
     init_frame_allocator();
     test_frame_allocator();
-    remap_kernel();
 }
 
 fn init_heap() {
@@ -46,31 +45,4 @@ extern "C" {
     // boot
     fn bootstack();
     fn bootstacktop();
-}
-
-fn remap_kernel() {
-    println!("remaping");
-    let offset = KERNEL_OFFSET as usize - MEMORY_OFFSET as usize;
-    use crate::memory::paging::{InactivePageTable, MemoryAttr};
-    let mut pg_table = InactivePageTable::new(offset);
-    pg_table.set(
-        stext as usize,
-        etext as usize,
-        MemoryAttr::new().set_readonly().set_execute(),
-    );
-    pg_table.set(sdata as usize, edata as usize, MemoryAttr::new().set_WR());
-    pg_table.set(
-        srodata as usize,
-        erodata as usize,
-        MemoryAttr::new().set_readonly(),
-    );
-    pg_table.set(sbss as usize, ebss as usize, MemoryAttr::new().set_WR());
-    pg_table.set(
-        bootstack as usize,
-        bootstacktop as usize,
-        MemoryAttr::new().set_WR(),
-    );
-    unsafe {
-        pg_table.activate();
-    }
 }

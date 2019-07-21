@@ -18,6 +18,7 @@ mod init;
 mod interrupt;
 mod lang_items;
 mod memory;
+mod memory_set;
 mod process;
 
 use buddy_system_allocator::LockedHeap;
