@@ -13,3 +13,4 @@ panic = "abort"
 panic = "abort"
 
 [dependencies]
+bbl = { path = "crate/bbl" }
