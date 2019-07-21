@@ -2,7 +2,7 @@
 #![feature(asm)]
 #![feature(panic_info_message)]
 #![feature(global_asm)]
-#![feature(alloc_error_handler)]
+#![feature(naked_functions)]
 #![feature(alloc)]
 #![no_std]
 
@@ -18,6 +18,7 @@ mod init;
 mod interrupt;
 mod lang_items;
 mod memory;
+mod process;
 
 use buddy_system_allocator::LockedHeap;
 
