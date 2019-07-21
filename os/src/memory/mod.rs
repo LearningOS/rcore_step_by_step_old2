@@ -1,4 +1,7 @@
+pub mod frame_allocator;
+
 use riscv::register::sstatus;
+use frame_allocator::{ init as init_frame_allocator, test as test_frame_allocator };
 use crate::consts::*;
 use crate::HEAP_ALLOCATOR;
 
@@ -8,6 +11,15 @@ pub fn init(dtb: usize) {
         sstatus::set_sum();
     }
 	init_heap();
+    if let Some((addr, mem_size)) = device_tree::DeviceTree::dtb_query_memory(dtb) {
+        assert_eq!(addr, MEMORY_OFFSET);
+        let KERNEL_END = dtb - KERNEL_OFFSET + MEMORY_OFFSET + PAGE_SIZE;
+        let KERNEL_SIZE = KERNEL_END - addr;
+        init_frame_allocator(KERNEL_END, KERNEL_SIZE);
+    } else {
+        panic!("failed to query memory");
+    }
+    test_frame_allocator();
 }
 
 fn init_heap() {
@@ -31,9 +43,4 @@ pub fn do_pgfault(tf: &mut TrapFrame, style: PageFault) {
         PageFault::LoadPageFault => panic!("load pagefault"),
         PageFault::StorePageFault => panic!("store pagefault"),
     }
-}
-
-#[alloc_error_handler]
-fn foo(_: core::alloc::Layout) -> ! {
-    panic!("DO NOTHING alloc_error_handler set by kernel");
 }
