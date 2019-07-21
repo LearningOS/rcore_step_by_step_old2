@@ -1,1 +1,1 @@
-cargo rustc -- -C link-arg=-nostartfiles
+cargo xbuild --target riscv32-os.json
