@@ -3,7 +3,8 @@
 #![feature(panic_info_message)]
 #![feature(global_asm)]
 #![no_std]
-#![feature(alloc_error_handler)]
+#![feature(naked_functions)]
+#![feature(alloc)]
 
 #[macro_use]
 pub mod io;
@@ -15,6 +16,7 @@ mod init;
 mod clock;
 mod memory;
 mod consts;
+mod process;
 
 use buddy_system_allocator::LockedHeap;
 #[global_allocator]
