@@ -14,6 +14,7 @@ pub mod io;
 mod clock;
 mod consts;
 mod context;
+mod fs;
 mod init;
 mod interrupt;
 mod lang_items;

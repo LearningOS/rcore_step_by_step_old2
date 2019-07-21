@@ -8,7 +8,7 @@ rust_bins := $(patsubst $(rust_src_dir)/%.rs, $(rust_bin_path)/%, $(wildcard $(r
 
 .PHONY: all clean rust
 
-all : rust
+all : rust build
 
 rust : 
 	@echo Building rust user program
@@ -17,6 +17,17 @@ rust :
 	@echo $(out_dir)
 	@echo $(rust_bins)
 	@cp -r $(rust_bins) $(out_dir)/rust
+
+build: $(out_img)
+
+$(out_img): rust
+	@rcore-fs-fuse $@ $(out_dir) zip
+
+rcore-fs-fuse:
+ifeq ($(shell which rcore-fs-fuse),)
+	@echo Installing rcore-fs-fuse
+	@cargo install rcore-fs-fuse --git https://github.com/rcore-os/rcore-fs --rev c611248
+endif
 
 clean :
 	@rm -rf $(out_dir)

@@ -4,6 +4,8 @@ mod structs;
 mod thread_pool;
 
 use self::scheduler::Scheduler;
+use crate::fs::INodeExt;
+use crate::fs::ROOT_INODE;
 use alloc::boxed::Box;
 use processor::Processor;
 use structs::Thread;
@@ -22,27 +24,24 @@ pub fn exit(code: usize) {
     CPU.exit(code);
 }
 
+pub fn kmain() {
+    CPU.run();
+}
+
 pub fn init() {
     println!("+------ now to initialize process ------+");
     let scheduler = Scheduler::new(1);
     let thread_pool = ThreadPool::new(100, scheduler);
     println!("+------ now to initialize processor ------+");
     CPU.init(Thread::new_idle(), Box::new(thread_pool));
-    println!("+------ now to initialize threads ------+");
-    let thread0 = Thread::new_kernel(hello_thread, 0);
-    CPU.add_thread(thread0);
-    let thread1 = Thread::new_kernel(hello_thread, 1);
-    CPU.add_thread(thread1);
-    let thread2 = Thread::new_kernel(hello_thread, 2);
-    CPU.add_thread(thread2);
-    let thread3 = Thread::new_kernel(hello_thread, 3);
-    CPU.add_thread(thread3);
-    let thread4 = Thread::new_kernel(hello_thread, 4);
-    CPU.add_thread(thread4);
-    let data = include_bytes!(env!("SFSIMG"));
-    let user = unsafe { Thread::new_user(data) };
+    let data = ROOT_INODE
+        .lookup("rust/shell")
+        .unwrap()
+        .read_as_vec()
+        .unwrap();
+    println!("size of program {:#x}", data.len());
+    let user = unsafe { Thread::new_user(data.as_slice()) };
     CPU.add_thread(user);
-    CPU.run();
 }
 
 #[no_mangle]

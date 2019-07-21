@@ -6,7 +6,9 @@ global_asm!(include_str!("boot/entry.asm"));
 pub extern "C" fn rust_main() -> ! {
     interrupt_init();
     crate::memory::init();
+    crate::fs::init();
     crate::process::init();
     crate::clock::init();
+    crate::process::kmain();
     loop {}
 }

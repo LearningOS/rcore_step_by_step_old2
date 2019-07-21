@@ -22,3 +22,5 @@ lazy_static = { version = "1.3", features = ["spin_no_std"] }
 spin = "0.5"
 RoundRobinScheduler = { path  = "crate/RoundRobinScheduler" }
 xmas-elf = "0.7"
+rcore-fs = { git = "https://github.com/rcore-os/rcore-fs", rev = "d8d6119" }
+rcore-fs-sfs = { git = "https://github.com/rcore-os/rcore-fs", rev = "d8d6119" }
