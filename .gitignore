@@ -10,3 +10,4 @@ Cargo.lock
 *.o
 os/usr/build
 os/usr/rust/target
+.DS_Store

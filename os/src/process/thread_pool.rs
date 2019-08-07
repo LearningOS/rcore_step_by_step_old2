@@ -2,14 +2,14 @@ use crate::process::scheduler::Scheduler;
 use crate::process::structs::*;
 use alloc::{ vec::Vec, boxed::Box };
 
-struct ThreadInfo {
-   status: Status,
-   present: bool,
+pub struct ThreadInfo {
+   pub status: Status,
+   pub present: bool,
    thread: Option<Box<Thread>>,
 }
 
 pub struct ThreadPool {
-    threads: Vec<Option<ThreadInfo>>, // 线程信号量的向量
+    pub threads: Vec<Option<ThreadInfo>>, // 线程信号量的向量
     scheduler: Box<Scheduler>, // 调度算法
 }
 
@@ -61,8 +61,14 @@ impl ThreadPool {
         let mut thread_info = self.threads[tid].as_mut().expect("thread not exits !");
         if thread_info.present {
             thread_info.thread = Some(thread);
-            thread_info.status = Status::Ready;
-            self.scheduler.push(tid);
+            match thread_info.status {
+                Status::Ready | Status::Running(_) => {
+                    self.scheduler.push(tid);
+                },
+                _ => {
+                    // println!("do nothing!");
+                },
+            }
         }
     }
 
@@ -79,5 +85,15 @@ impl ThreadPool {
         });
         self.scheduler.exit(tid);
         println!("exit code: {}", code);
+    }
+
+    pub fn wakeup(&mut self, tid: Tid) {
+        let proc = self.threads[tid].as_mut().expect("thread not exist");
+        if proc.present {
+            proc.status = Status::Ready;
+            self.scheduler.push(tid);
+        } else {
+            panic!("try to sleep an null thread !");
+        }
     }
 }

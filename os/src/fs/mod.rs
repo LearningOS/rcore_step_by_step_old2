@@ -4,6 +4,7 @@ use rcore_fs_sfs::SimpleFileSystem;
 use alloc::{ sync::Arc, vec::Vec };
 
 mod device;
+pub mod stdio;
 
 lazy_static! {
     /// The root of file system

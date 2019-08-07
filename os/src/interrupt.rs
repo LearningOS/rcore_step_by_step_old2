@@ -2,15 +2,17 @@ use crate::context::TrapFrame;
 
 global_asm!(include_str!("trap/trap.asm"));
 
-use riscv::register::{stvec, sstatus};
+use riscv::register::{stvec, sscratch, sie, sstatus};
 #[no_mangle]
 pub fn init() {
     extern {
         fn __alltraps();
     }
     unsafe {
+        sscratch::write(0); // 给中断 asm 初始化
         sstatus::set_sie();
         stvec::write(__alltraps as usize, stvec::TrapMode::Direct);
+        sie::set_sext(); // 开外部中断（串口）
     }
 }
 
@@ -31,6 +33,10 @@ pub extern "C" fn rust_trap(tf: &mut TrapFrame) {
         Trap::Exception(Exception::Breakpoint) => breakpoint(),
         Trap::Interrupt(Interrupt::SupervisorTimer) => super_timer(),
         Trap::Exception(Exception::UserEnvCall) => syscall(tf),
+        Trap::Interrupt(Interrupt::SupervisorExternal) => {
+            let ch = bbl::sbi::console_getchar() as u8 as char;
+            external(ch as u8);
+        },
         _ => panic!("unexpected trap"),
     }
 }
@@ -39,21 +45,14 @@ pub const SYS_WRITE: usize = 64;
 pub const SYS_EXIT: usize = 93;
 
 fn syscall(tf: &mut TrapFrame) {
+    let ret = crate::syscall::syscall(
+        tf.x[17],
+        [tf.x[10], tf.x[11], tf.x[12]],
+        tf,
+    );
     tf.sepc += 4;
-    match tf.x[17] {
-        SYS_WRITE => {
-            print!("{}", tf.x[10] as u8 as char);
-        },
-        SYS_EXIT => {
-            println!("exit!");
-            use crate::process::exit;
-            exit(tf.x[10]);
-        },
-        _ => {
-            println!("unknown user syscall !");
-        }
-    };
-} 
+    tf.x[10] = ret as usize;
+}
 
 fn breakpoint() {
     panic!("a breakpoint set by kernel");
@@ -64,9 +63,9 @@ fn super_timer() {
     clock_set_next_event();
     unsafe{
         TICK = TICK + 1;
-        if TICK % 100 == 0 {
-            println!("100 ticks!");
-        }
+        // if TICK % 100 == 0 {
+        //     println!("100 ticks!");
+        // }
     }
     tick();
 }
@@ -92,4 +91,8 @@ pub fn restore(flags: usize) {    // 根据 flag 设置中断
     unsafe {
         asm!("csrs sstatus, $0" :: "r"(flags) :: "volatile");
     }
+}
+
+fn external(ch: u8) {
+    crate::fs::stdio::STDIN.push(ch as char);
 }

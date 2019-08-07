@@ -28,6 +28,18 @@ pub fn kmain() {
     CPU.run();
 }
 
+pub fn yield_now() {
+    CPU.yield_now();
+}
+
+pub fn wake_up(tid : Tid) {
+    CPU.wake_up(tid);
+}
+
+pub fn current_tid() -> usize {
+    CPU.current_tid()
+}
+
 pub fn init() {
     println!("+------ now to initialize process ------+");
     let scheduler = Scheduler::new(1);

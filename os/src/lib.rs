@@ -19,6 +19,8 @@ mod consts;
 mod process;
 mod memory_set;
 mod fs;
+mod syscall;
+mod sync;
 
 extern crate alloc;
 

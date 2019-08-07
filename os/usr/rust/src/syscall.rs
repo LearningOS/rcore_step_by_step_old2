@@ -27,7 +27,12 @@ pub fn sys_exit(code: usize) -> ! {
     loop{}
 }
 
+pub fn sys_read(fd : usize, base : *const u8, len : usize) -> i32 {
+    sys_call(SyscallId::Read, fd, base as usize , len , 0)
+}
+
 enum SyscallId {
+    Read = 63,
     Write = 64,
     Exit = 93,
 }

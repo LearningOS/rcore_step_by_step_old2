@@ -37,3 +37,17 @@ impl fmt::Write for StdOut {
 pub fn _print(args: fmt::Arguments) {
     StdOut.write_fmt(args).unwrap();
 }
+
+pub const STDIN: usize = 0;
+
+pub fn getc() -> u8 {
+    let mut c = 0u8;
+    loop {
+        let len = syscall::sys_read(STDIN, &mut c, 1);
+        match len {
+            1 => return c,
+            0 => continue,
+            _ => panic!("read stdin len = {}", len),
+        }
+    }
+}

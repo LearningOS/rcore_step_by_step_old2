@@ -58,7 +58,7 @@ impl Processor {
                 inner.idle.switch_to(&mut *inner.current.as_mut().unwrap().1);
                 // 上一个线程已经结束或时间片用完，切换回 idle 线程
                 let (tid, thread) = inner.current.take().unwrap();
-                println!("thread {} ran just now", tid);
+                // println!("thread {} ran just now", tid);
                 // 将上一个线程放回线程池中
                 inner.pool.retrieve(tid, thread);
             } else {
@@ -100,6 +100,38 @@ impl Processor {
             .1
             .switch_to(&mut inner.idle);
         loop {}
+    }
+
+    pub fn yield_now(&self) {
+        let inner = self.inner();
+        if !inner.current.is_none() {
+            unsafe {
+                let flags = disable_and_store(); // 禁止中断，获取当前 sstatus 的状态并保存。
+                let tid = inner.current.as_mut().unwrap().0;
+                let thread_info = inner.pool.threads[tid].as_mut().expect("thread not exits");
+                if thread_info.present {
+                    thread_info.status = Status::Sleeping;
+                } else {
+                    panic!("try to sleep an null thread !");
+                }
+                inner
+                    .current
+                    .as_mut()
+                    .unwrap()
+                    .1
+                    .switch_to(&mut *inner.idle);   // 转到 idle 线程重新调度
+                restore(flags);  // 使能中断，恢复 sstatus 的状态
+            }
+        }
+    }
+
+    pub fn wake_up(&self, tid: Tid) {
+        let inner = self.inner();
+        inner.pool.wakeup(tid);
+    }
+
+    pub fn current_tid(&self) -> usize {
+        self.inner().current.as_mut().unwrap().0 as usize
     }
 }
 
