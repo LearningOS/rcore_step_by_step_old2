@@ -58,6 +58,9 @@ impl ThreadPool {
     }
 
     pub fn retrieve(&mut self, tid: Tid, thread: Box<Thread> ) {
+        if (self.threads[tid].is_none()) {
+            return;
+        }
         let mut thread_info = self.threads[tid].as_mut().expect("thread not exits !");
         if thread_info.present {
             thread_info.thread = Some(thread);
@@ -78,11 +81,7 @@ impl ThreadPool {
     }
 
     pub fn exit(&mut self, tid: Tid, code: usize) {
-        self.threads[tid] = Some(ThreadInfo{
-            status: Status::Ready,
-            present: false,
-            thread: None,
-        });
+        self.threads[tid] = None;
         self.scheduler.exit(tid);
         println!("exit code: {}", code);
     }

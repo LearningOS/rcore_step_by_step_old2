@@ -31,8 +31,13 @@ pub fn sys_read(fd : usize, base : *const u8, len : usize) -> i32 {
     sys_call(SyscallId::Read, fd, base as usize , len , 0)
 }
 
+pub fn sys_exec(path : *const u8) {
+    sys_call(SyscallId::Exec, path as usize, 0, 0, 0);
+}
+
 enum SyscallId {
     Read = 63,
     Write = 64,
     Exit = 93,
+    Exec = 221,
 }

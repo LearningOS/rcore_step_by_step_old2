@@ -40,20 +40,24 @@ pub fn current_tid() -> usize {
     CPU.current_tid()
 }
 
+pub fn excute(name : &str) {
+    println!("excutint program: {}", name);
+    let data = ROOT_INODE
+        .lookup(name)
+        .unwrap()
+        .read_as_vec()
+        .unwrap();
+    let thread = unsafe{ Thread::new_user(data.as_slice()) };
+    CPU.add_thread(thread);
+}
+
 pub fn init() {
     println!("+------ now to initialize process ------+");
     let scheduler = Scheduler::new(1);
     let thread_pool = ThreadPool::new(100, scheduler);
     println!("+------ now to initialize processor ------+");
     CPU.init(Thread::new_idle(), Box::new(thread_pool));
-    let data = ROOT_INODE
-        .lookup("rust/shell")
-        .unwrap()
-        .read_as_vec()
-        .unwrap();
-    println!("size of program {:#x}", data.len());
-    let user = unsafe{ Thread::new_user(data.as_slice()) };
-    CPU.add_thread(user);
+    excute("rust/shell");
 }
 
 #[no_mangle]
