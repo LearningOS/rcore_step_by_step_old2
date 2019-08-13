@@ -209,7 +209,7 @@ impl Page {
 
     #[cfg(riscv64)]
     pub fn from_page_table_indices(p4_index: usize, p3_index: usize,
-                                   p2_index: usize, p1_index: usize) -> Self {x
+                                   p2_index: usize, p1_index: usize) -> Self {
         let mut addr: usize = 0;
         addr.set_bits(39..48, p4_index);
         addr.set_bits(30..39, p3_index);
