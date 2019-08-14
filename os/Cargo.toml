@@ -15,3 +15,4 @@ panic = "abort"
 [dependencies]
 bbl = { path = "crate/bbl" }
 riscv = { git = "https://github.com/rcore-os/riscv", rev = "c62af46", features = ["inline-asm"] }
+buddy_system_allocator = "0.1"
