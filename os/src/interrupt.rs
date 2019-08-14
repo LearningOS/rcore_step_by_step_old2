@@ -22,6 +22,9 @@ pub extern "C" fn rust_trap(tf: &mut TrapFrame) {
     match tf.scause.cause() {
         Trap::Exception(Exception::Breakpoint) => breakpoint(),
         Trap::Interrupt(Interrupt::SupervisorTimer) => timer(),
+        Trap::Exception(Exception::InstructionPageFault) => page_fault(tf),
+        Trap::Exception(Exception::LoadPageFault) => page_fault(tf),
+        Trap::Exception(Exception::StorePageFault) => page_fault(tf),
         _ => panic!("unexpected trap: {:#x?}", tf),
     }
 }
@@ -39,4 +42,9 @@ fn timer() {
             println!("100 ticks!");
         }
     }
+}
+
+fn page_fault(tf: &mut TrapFrame) {
+    println!("{:?} @ {:#x}", tf.scause.cause(), tf.stval);
+    panic!("page fault");
 }
