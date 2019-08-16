@@ -6,6 +6,7 @@ use core::panic::PanicInfo;
 
 #[macro_use]
 pub mod io;
+mod interrupt;
 
 global_asm!(include_str!("boot/entry.asm"));
 
@@ -17,9 +18,10 @@ fn panic(info: &PanicInfo) -> ! {
 
 #[no_mangle]
 pub extern "C" fn rust_main() -> ! {
-    let a = "Hello";
-    let b = "World";
-    println!("{}, {}!", a, b);
+    interrupt::init();
+    unsafe {
+        riscv::asm::ebreak();
+    }
     panic!("End of rust_main");
 }
 
