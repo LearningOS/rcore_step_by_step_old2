@@ -26,8 +26,8 @@ pub const CAUSE_STRINGS: [&str; 16] = [
     "Store/AMO page fault"
 ];
 
-pub fn cause_to_str(cause: u64) -> &'static str {
-    if (cause as i64) < 0 {
+pub fn cause_to_str(cause: usize) -> &'static str {
+    if (cause as isize) < 0 {
         "Interrupt"
     } else if cause >= 16 {
         "Reserved (>=16)"

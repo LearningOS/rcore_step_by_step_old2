@@ -5,7 +5,7 @@ use crate::riscv::bits::STATUS_FS;
 #[macro_export]
 macro_rules! csrr {
     ( $r:ident ) => {{
-        let value: u64;
+        let value: u32;
         #[allow(unused_unsafe)]
         unsafe { asm!("csrr $0, $1" : "=r"(value) : "i"(crate::riscv::csr::$r)) };
         value
@@ -16,7 +16,7 @@ macro_rules! csrr {
 #[macro_export]
 macro_rules! csrw {
     ( $r:ident, $x:expr ) => {{
-        let x: u64 = $x;
+        let x: u32 = $x;
         asm!("csrw $0, $1" :: "i"(crate::riscv::csr::$r), "r"(x) :: "volatile");
     }};
 }
@@ -25,7 +25,7 @@ macro_rules! csrw {
 #[macro_export]
 macro_rules! csrwi {
     ( $r:ident, $x:expr ) => {{
-        const X: u64 = $x;
+        const X: u32 = $x;
         asm!("csrwi $0, $1" :: "i"(crate::riscv::csr::$r), "i"(X) :: "volatile");
     }};
 }
@@ -34,7 +34,7 @@ macro_rules! csrwi {
 #[macro_export]
 macro_rules! csrs {
     ( $r:ident, $x:expr ) => {{
-        let x: u64 = $x;
+        let x: u32 = $x;
         asm!("csrs $0, $1" :: "i"(crate::riscv::csr::$r), "r"(x) :: "volatile");
     }};
 }
@@ -43,7 +43,7 @@ macro_rules! csrs {
 #[macro_export]
 macro_rules! csrsi {
     ( $r:ident, $x:expr ) => {{
-        const X: u64 = $x;
+        const X: u32 = $x;
         asm!("csrsi $0, $1" :: "i"(crate::riscv::csr::$r), "i"(X) :: "volatile");
     }};
 }
@@ -52,7 +52,7 @@ macro_rules! csrsi {
 #[macro_export]
 macro_rules! csrc {
     ( $r:ident, $x:expr ) => {{
-        let x: u64 = $x;
+        let x: u32 = $x;
         asm!("csrc $0, $1" :: "i"(crate::riscv::csr::$r), "r"(x) :: "volatile");
     }};
 }
@@ -61,7 +61,7 @@ macro_rules! csrc {
 #[macro_export]
 macro_rules! csrci {
     ( $r:ident, $x:expr ) => {{
-        const X: u64 = $x;
+        const X: u32 = $x;
         asm!("csrci $0, $1" :: "i"(crate::riscv::csr::$r), "i"(X) :: "volatile");
     }};
 }
@@ -70,7 +70,7 @@ pub fn sfence_vma() {
     unsafe { asm!("sfence.vma" ::: "memory" : "volatile") }
 }
 
-pub fn sfence_vma_addr(vaddr: u64) {
+pub fn sfence_vma_addr(vaddr: u32) {
     unsafe { asm!("sfence.vma $0" :: "r"(vaddr) : "memory" : "volatile") }
 }
 
@@ -90,23 +90,23 @@ pub fn wfi() {
 ///
 /// Since traps from S-mode always cause a hyperivsor panic, the value of `sstatus.spp` will always
 /// be zero. Thus, mret will always cause a vmexit and so any value for sepc is safe.
-pub fn set_sepc(value: u64) {
+pub fn set_sepc(value: u32) {
     unsafe { csrw!(sepc, value) }
 }
 
 /// Set the `sscratch` CSR. This is safe because `sscratch` does not impact processor execution.
-pub fn set_sscratch(value: u64) {
+pub fn set_sscratch(value: u32) {
     unsafe { csrw!(sscratch, value) }
 }
 
 /// Clear the indicated bits of `sip`. This is safe because interrupt state is not used to enforce
 /// safety invariants.
-pub fn clear_sip(mask: u64) {
+pub fn clear_sip(mask: u32) {
     unsafe { csrc!(sip, mask) }
 }
 
 /// Set the FS bits of `sstatus`. This is safe because rvirt does not use hardware floating point
 /// support.
-pub fn set_sstatus_fs(new: u64) {
+pub fn set_sstatus_fs(new: u32) {
     unsafe { csrw!(sstatus, (new & STATUS_FS) | (csrr!(sstatus) & !STATUS_FS)) }
 }

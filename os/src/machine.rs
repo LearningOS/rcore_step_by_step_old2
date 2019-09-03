@@ -28,8 +28,8 @@ pub const SYMBOL_PA2VA_OFFSET: u32 = 0x40000000;
 #[start] fn start(_argc: isize, _argv: *const *const u8) -> isize {0}
 #[no_mangle] fn abort() -> ! { loop {}}
 
-const M_MODE_STACK_BASE: u64 = 0x80810000;
-const M_MODE_STACK_STRIDE: u64 = 0x10000;
+const M_MODE_STACK_BASE: u32 = 0x80810000;
+const M_MODE_STACK_STRIDE: u32 = 0x10000;
 
 #[link_section = ".payload"]
 static PAYLOAD: [u8; include_bytes!(concat!("../", env!("PAYLOAD"))).len()] =
@@ -40,7 +40,7 @@ global_asm!(include_str!("mcode.S"));
 #[naked]
 #[no_mangle]
 #[link_section = ".text.entrypoint"]
-unsafe fn _start(hartid: u64, device_tree_blob: u64) {
+unsafe fn _start(hartid: u32, device_tree_blob: u32) {
     asm!("li sp, $0
           li t1, $1
           mul t0, a0, t1
@@ -54,17 +54,17 @@ unsafe fn _start(hartid: u64, device_tree_blob: u64) {
 }
 
 #[inline(never)]
-unsafe fn mstart(hartid: u64, device_tree_blob: u64) {
+unsafe fn mstart(hartid: u32, device_tree_blob: u32) {
     use crate::riscv::bits::*;
     csrs!(mideleg, 0x0222);
     csrs!(medeleg, 0xb1ff);
     csrw!(mie, 0x088);
     csrc!(mstatus, STATUS_MPP_M);
     csrs!(mstatus, STATUS_MPP_S);
-    csrw!(mepc, PAYLOAD.as_ptr() as u64);
+    csrw!(mepc, PAYLOAD.as_ptr() as u32);
     csrw!(mcounteren, 0xffffffff);
     csrw!(mscratch, M_MODE_STACK_BASE + M_MODE_STACK_STRIDE * hartid);
-    csrw!(pmpaddr0, 0xffffffffffffffff);
+    csrw!(pmpaddr0, 0xffffffff);
     csrw!(pmpcfg0, csrr!(pmpcfg0) | 0x1f);
     csrw!(satp, 0);
 
@@ -79,7 +79,7 @@ unsafe fn mstart(hartid: u64, device_tree_blob: u64) {
 
 #[naked]
 #[inline(never)]
-unsafe fn enter_supervisor(_hartid: u64, _device_tree_blob: u64) {
+unsafe fn enter_supervisor(_hartid: u32, _device_tree_blob: u32) {
     asm!("mret" :::: "volatile");
 }
 
