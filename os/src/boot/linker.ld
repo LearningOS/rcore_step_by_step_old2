@@ -6,11 +6,11 @@
 OUTPUT_ARCH(riscv)
 ENTRY(_start)
 
-BASE_ADDRESS = 0xC0020000;
+BASE_ADDRESS = 0x80400000;
 
 SECTIONS
 {
-    . = 0xC0000000;
+    . = 0x80200000;
     .boot : {
         KEEP(*(.text.boot))
     }
