@@ -50,12 +50,17 @@ try:
     lui sp, %hi(bootstack)
     add sp, sp, t0
 
+    # save sp to mscratch
+    csrw mscratch, sp
+
     # first hart first
     bnez a0, other_hart
     j boot_first_hart
 
 other_hart:
+    # we have only one hart now
     wfi
+    j other_hart
 
 .section .bss.stack
 .align 12 # PAGE_SIZE

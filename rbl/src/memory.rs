@@ -2,7 +2,7 @@ use core::mem::size_of;
 use crate::consts::KERNEL_HEAP_SIZE;
 use crate::HEAP_ALLOCATOR;
 
-extern {
+extern "C" {
     fn sbss();
     fn ebss();
 }

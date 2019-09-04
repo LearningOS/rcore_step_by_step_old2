@@ -1,24 +1,23 @@
 // Rust language items
 
-use core::panic::PanicInfo;
-use core::fmt::Write;
 use core::alloc::Layout;
-use alloc::string::String;
+use core::panic::PanicInfo;
 
-#[lang = "eh_personality"] 
-extern fn eh_personality() {
-}
+#[lang = "eh_personality"]
+extern "C" fn eh_personality() {}
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     let location = info.location().unwrap();
     let message = info.message().unwrap();
-    let mut output = String::new();
-    write!(&mut output, "panic info {}", message);
+    println!(
+        "\nPANIC in {} at line {} \n\t{}",
+        location.file(),
+        location.line(),
+        message
+    );
 
-    loop {
-
-    }
+    loop {}
 }
 
 #[lang = "oom"]

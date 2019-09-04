@@ -26,4 +26,7 @@ SECTIONS {
         *(.bss .bss.*)
         PROVIDE(ebss = .);
     }
+    .payload : {
+            *(.payload)
+    }
 }
