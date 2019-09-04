@@ -8,3 +8,4 @@ Cargo.lock
 *.rlib
 *.img
 *.o
+.idea/

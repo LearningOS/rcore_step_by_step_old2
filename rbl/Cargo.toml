@@ -1,0 +1,13 @@
+[package]
+name = "rbl"
+version = "0.2.0"
+authors = ["Jiajie Chen <noc@jiegec.ac.cn>, Yu Chen <yuchen@tsinghua.edu.cn>"]
+edition = "2018"
+
+[dependencies]
+xmas-elf = "0.6"
+riscv = "0.5"
+device_tree = { git = "https://github.com/jiegec/device_tree-rs" }
+
+[build-dependencies]
+cc = "1.0"
