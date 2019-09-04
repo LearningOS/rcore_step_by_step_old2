@@ -1,18 +1,19 @@
-kernel := target/riscv32/debug/rbl
+OUT=target/riscv32imac-unknown-none-elf/release
+kernel := $(OUT)/rbl
 
 .PHONY: build run debug
 
-$(kernel):
-	@cargo xbuild --target=riscv32.json
+$(kernel): src/*.rs src/boot/*.rs  src/boot/*.S src/boot/linker.ld
+	cargo  rustc --release --target riscv32imac-unknown-none-elf  --bin rbl -- -C link-arg=-Tsrc/boot/linker.ld
 
-build: $(kernel)
+build: $(kernel) rustup-target
 
 run: build
 	@qemu-system-riscv32 \
 		-smp cores=1 \
 		-machine virt \
 		-kernel $(kernel) \
-		-nographic \
-		-s
-debug:
-	@gdb $(kernel) -x gdbinit
+		-nographic
+
+rustup-target:
+	rustup target add riscv32imac-unknown-none-elf || true
