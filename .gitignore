@@ -11,3 +11,5 @@ Cargo.lock
 os/usr/build
 os/usr/rust/target
 .DS_Store
+_book
+node_modules

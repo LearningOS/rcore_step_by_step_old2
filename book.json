@@ -1,0 +1,8 @@
+{
+  "plugins": ["disqus", "chapter-fold", "code", "search-pro"],
+  "pluginsConfig": {
+    "disqus": {
+      "shortName": "fakename"
+    }
+  }
+}
