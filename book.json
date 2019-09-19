@@ -1,8 +1,11 @@
 {
-  "plugins": ["disqus", "chapter-fold", "code", "search-pro"],
+  "plugins": ["disqus", "chapter-fold", "code", "search-pro", "github"],
   "pluginsConfig": {
     "disqus": {
       "shortName": "https-xy-plus-gitbook-io-rcore-step-by-step"
+    },
+    "github": {
+      "url": "https://github.com/LearningOS/rcore_step_by_step"
     }
   }
 }
