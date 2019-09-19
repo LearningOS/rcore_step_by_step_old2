@@ -1,0 +1,22 @@
+{
+  "plugins": [
+    "chapter-fold",
+    "code",
+    "search-pro",
+    "github",
+    "localized-footer",
+    "ancre-navigation",
+    "-sharing"
+  ],
+  "pluginsConfig": {
+    "github": {
+      "url": "https://github.com/LearningOS/rcore_step_by_step"
+    },
+    "localized-footer": {
+      "filename": "gitbook/comment.html"
+    }
+  },
+  "styles": {
+    "website": "gitbook/website.css"
+  }
+}
