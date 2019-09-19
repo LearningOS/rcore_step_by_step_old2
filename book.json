@@ -1,11 +1,17 @@
 {
-  "plugins": ["disqus", "chapter-fold", "code", "search-pro", "github"],
+  "plugins": [
+    "chapter-fold",
+    "code",
+    "search-pro",
+    "github",
+    "localized-footer"
+  ],
   "pluginsConfig": {
-    "disqus": {
-      "shortName": "https-xy-plus-gitbook-io-rcore-step-by-step"
-    },
     "github": {
       "url": "https://github.com/LearningOS/rcore_step_by_step"
+    },
+    "localized-footer": {
+      "filename": "comment.md"
     }
   }
 }
