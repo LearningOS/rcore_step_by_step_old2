@@ -2,7 +2,7 @@
   "plugins": ["disqus", "chapter-fold", "code", "search-pro"],
   "pluginsConfig": {
     "disqus": {
-      "shortName": "fakename"
+      "shortName": "https-xy-plus-gitbook-io-rcore-step-by-step"
     }
   }
 }
