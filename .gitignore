@@ -14,3 +14,5 @@ os/usr/rust/target
 _book
 node_modules
 .idea
+gitbook
+book.json

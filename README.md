@@ -4,11 +4,9 @@
 
 本系列文章记录了使用 Rust 编程语言编写一个小型操作系统的详细过程。每篇文章包含所需所有所需代码和相关知识点讲解。
 
-- [GitHub（代码）](https://github.com/LearningOS/rcore_step_by_step/os)
+- [代码](https://github.com/LearningOS/rcore_step_by_step/os)
 
-- [GitBook（文档）](https://github.com/LearningOS/rcore_step_by_step/docs)
-
-- [知乎专栏](https://zhuanlan.zhihu.com/c_1086573713289347072)
+- [文档](https://learningos.github.io/rcore_step_by_step_webdoc/)
 
 ## 如何使用
 
